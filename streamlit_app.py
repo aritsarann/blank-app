@@ -41,3 +41,36 @@ def query_total_revenue_by_genre():
     st.pyplot(fig)
 
 query_total_revenue_by_genre()
+
+def query_total_quantity_by_genre():
+    curs.execute(''' 
+    SELECT 
+        GENRE, 
+        SUM(QUANTITY) AS total_quantity
+    FROM 
+        book
+    GROUP BY 
+        GENRE
+    ORDER BY 
+        total_quantity DESC;
+    ''')
+    tables = [row for row in curs.fetchall()]
+    tables = [(genre if genre is not None else "Others", quantity) for genre, quantity in tables]
+    genres = [row[0] for row in tables]
+    quantities = [row[1] for row in tables]
+
+    # Find the max quantity
+    max_quantity = max(quantities)
+
+    # Create a color list where the max value gets 'orangered' and others get 'skyblue'
+    colors = ['orangered' if quantity == max_quantity else 'skyblue' for quantity in quantities]
+
+    fig = plt.figure(figsize=(10, 6))
+    plt.bar(genres, quantities, color=colors)
+    plt.title('Total Quantity by Genre', fontsize=14)
+    plt.xlabel('Genre', fontsize=12)
+    plt.ylabel('Total Quantity', fontsize=12)
+    plt.xticks(rotation=45, ha="right")
+    st.pyplot(fig)
+
+query_total_quantity_by_genre()
