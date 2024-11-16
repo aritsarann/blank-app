@@ -1,6 +1,43 @@
 import streamlit as st
+import matplotlib.pyplot as plt
+import pandas as pd
+from pinotdb import connect
+import plotly.express as px
+from datetime import datetime
 
-st.title("🎈 My new app")
-st.write(
-    "Let's start building! For help and inspiration, head over to [docs.streamlit.io](https://docs.streamlit.io/)."
-)
+# Connect to the Pinot database
+conn = connect(host='13.214.194.35', port=8099, path='/query/sql', schema='http')
+curs = conn.cursor()
+
+def query_total_revenue_by_genre():
+    curs.execute(''' 
+    SELECT 
+        GENRE, 
+        SUM(TOTAL_PRICE) AS total_revenue 
+    FROM 
+        book
+    GROUP BY 
+        GENRE
+    ORDER BY 
+        total_revenue DESC;
+    ''')
+    tables = [row for row in curs.fetchall()]
+    tables = [(genre if genre is not None else "Others", revenue) for genre, revenue in tables]
+    genres = [row[0] for row in tables]
+    revenues = [row[1] for row in tables]
+
+    # Find the max revenue
+    max_revenue = max(revenues)
+
+    # Create a color list where the max value gets 'orangered' and others get 'skyblue'
+    colors = ['orangered' if revenue == max_revenue else 'skyblue' for revenue in revenues]
+
+    fig = plt.figure(figsize=(10, 6))
+    plt.bar(genres, revenues, color=colors)
+    plt.title('Total Revenue by Genre', fontsize=14)
+    plt.xlabel('Genre', fontsize=12)
+    plt.ylabel('Total Revenue (USD)', fontsize=12)
+    plt.xticks(rotation=45, ha="right")
+    st.pyplot(fig)
+
+query_total_revenue_by_genre()
